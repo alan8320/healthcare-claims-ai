@@ -151,7 +151,7 @@ See [`models/model_card.md`](models/model_card.md) for full documentation includ
 | Component | Status |
 |-----------|--------|
 | NPPES provider feature pipeline | ✅ Complete |
-| X12 834 enrollment parser | 🔄 In progress |
+| X12 834 enrollment parser | 2 | ✅ Complete |
 | X12 837/835 claim-denial parser | 🔜 Upcoming |
 | Synthea FHIR R4 pipeline | 🔜 Upcoming |
 | Feature store assembly | 🔜 Upcoming |
