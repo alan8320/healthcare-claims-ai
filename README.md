@@ -152,14 +152,23 @@ See [`models/model_card.md`](models/model_card.md) for full documentation includ
 |-----------|--------|
 | NPPES provider feature pipeline | ✅ Complete |
 | X12 834 enrollment parser | ✅ Complete |
-| X12 837/835 claim-denial parser | 🔜 Upcoming |
-| Synthea FHIR R4 pipeline | 🔜 Upcoming |
+| Enrollment mismatch feature schema | ✅ Complete |
+| X12 837 claim parser | 🔜 Upcoming |
+| X12 835 remittance + denial labels | 🔜 Upcoming |
+| ICD-10/CPT code rollups | 🔜 Upcoming |
+| De-identification utility | 🔜 Upcoming |
+| FHIR R4 Synthea pipeline | 🔜 Upcoming |
 | Feature store assembly | 🔜 Upcoming |
-| Prediction model + evaluation | 🔜 Upcoming |
-| GenAI explanation layer | 🔜 Upcoming |
-| FastAPI + Docker serving | 🔜 Upcoming |
-
----
+| Model training pipeline | 🔜 Upcoming |
+| Evaluation harness | 🔜 Upcoming |
+| Model card | 🔜 Upcoming |
+| SHAP attribution layer | 🔜 Upcoming |
+| RAG policy retriever | 🔜 Upcoming |
+| LLM explanation generator | 🔜 Upcoming |
+| AI Agent | 🔜 Upcoming |
+| FastAPI endpoint | 🔜 Upcoming |
+| Docker + Makefile | 🔜 Upcoming |
+| Tests + reproducibility | 🔜 Upcoming |
 
 ## Background
 
