@@ -153,7 +153,7 @@ See [`models/model_card.md`](models/model_card.md) for full documentation includ
 | NPPES provider feature pipeline | ✅ Complete |
 | X12 834 enrollment parser | ✅ Complete |
 | Enrollment mismatch feature schema | ✅ Complete |
-| X12 837 claim parser | 🔜 Upcoming |
+| X12 837 claim parser | ✅ Complete  |
 | X12 835 remittance + denial labels | 🔜 Upcoming |
 | ICD-10/CPT code rollups | 🔜 Upcoming |
 | De-identification utility | 🔜 Upcoming |
