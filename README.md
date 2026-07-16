@@ -154,7 +154,7 @@ See [`models/model_card.md`](models/model_card.md) for full documentation includ
 | X12 834 enrollment parser | ✅ Complete |
 | Enrollment mismatch feature schema | ✅ Complete |
 | X12 837 claim parser | ✅ Complete  |
-| X12 835 remittance + denial labels | 🔜 Upcoming |
+| X12 835 remittance + denial labels | ✅ Complete  |
 | ICD-10/CPT code rollups | 🔜 Upcoming |
 | De-identification utility | 🔜 Upcoming |
 | FHIR R4 Synthea pipeline | 🔜 Upcoming |
