@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[3]:
-
-
 # data/x12/parser_837.py
 """
 X12 837P Professional Claim Parser
@@ -13,6 +7,7 @@ into a structured pandas DataFrame joinable to the
 provider enrollment feature table from the 834 parser.
 
 Key segments extracted:
+    NM1*41  — start of new claim block (billing provider)
     NM1*85  — billing provider NPI
     NM1*82  — rendering provider NPI (the individual doctor)
     NM1*IL  — patient member ID
@@ -20,6 +15,13 @@ Key segments extracted:
     DTP*472 — date of service
     HI      — ICD-10 diagnosis code
     SV1     — CPT procedure code and billed units
+
+Parser design note:
+    In the 837P standard NM1 segments appear BEFORE
+    the CLM segment that starts the claim record.
+    NM1*41 (billing provider) marks the start of each
+    new claim block. The parser resets on NM1*41 to
+    prevent provider context bleeding across claims.
 
 Output columns:
     claim_id, rendering_npi, billing_npi, patient_id,
@@ -52,51 +54,42 @@ def parse_837(filepath: str) -> pd.DataFrame:
         elements = segment.split("*")
         seg_id = elements[0]
 
-        # NM1 — name segments · qualifier in elements[1]
-        # *85 = billing provider · *82 = rendering provider
-        # *IL = patient (insured)
         if seg_id == "NM1":
             qualifier = elements[1] if len(elements) > 1 else ""
 
-            # Billing provider NPI
-            if qualifier == "85" and len(elements) > 9:
+            # NM1*41 = billing provider = start of new claim block
+            # Save previous claim if exists and reset current
+            if qualifier == "41":
+                if current.get("claim_id"):
+                    claims.append(current.copy())
+                current = {}
+
+            # NM1*85 — billing provider NPI
+            elif qualifier == "85" and len(elements) > 9:
                 current["billing_npi"] = elements[9]
 
-            # Rendering provider NPI — individual doctor
-            # This is the key join field to enrollment data
+            # NM1*82 — rendering provider NPI
+            # This is the individual doctor who performed service
+            # Key join field to enrollment data
             elif qualifier == "82" and len(elements) > 9:
-                current["rendering_npi"] = elements[9]
+                current["rendering_npi"]   = elements[9]
                 current["rendering_last"]  = elements[3]
                 current["rendering_first"] = elements[4]
 
-            # Patient member ID
+            # NM1*IL — patient (insured) member ID
             elif qualifier == "IL" and len(elements) > 9:
                 current["patient_id"]    = elements[9]
                 current["patient_last"]  = elements[3]
                 current["patient_first"] = elements[4]
 
         # CLM — claim information
-        # elements[1] = claim ID · elements[2] = billed amount
+        # elements[1] = claim ID
+        # elements[2] = billed amount
         # elements[5] = place of service code
         elif seg_id == "CLM" and len(elements) > 2:
-            # Save previous claim if one exists
-            if current.get("claim_id"):
-                claims.append(current.copy())
-                # Keep provider info · reset claim-specific fields
-                current = {
-                    k: v for k, v in current.items()
-                    if k in [
-                        "billing_npi", "rendering_npi",
-                        "rendering_last", "rendering_first"
-                    ]
-                }
-
-            current["claim_id"]     = elements[1]
+            current["claim_id"]      = elements[1]
             current["billed_amount"] = float(elements[2]) \
                 if elements[2] else 0.0
-
-            # Place of service is in elements[5] as "code:qualifier:qualifier"
-            # Extract just the numeric code
             if len(elements) > 5:
                 pos = elements[5].split(":")
                 current["place_of_service"] = pos[0] if pos else None
@@ -113,7 +106,7 @@ def parse_837(filepath: str) -> pd.DataFrame:
             if len(diag) > 1:
                 current["icd10_code"] = diag[1]
 
-        # SV1 — service line (procedure code + billed amount)
+        # SV1 — service line (procedure code + units)
         # Format: HC:99213 → qualifier:CPT code
         elif seg_id == "SV1" and len(elements) > 1:
             svc = elements[1].split(":")
@@ -170,7 +163,8 @@ def join_claims_to_enrollment(
         how="left"
     )
 
-    # Flag claims where provider is terminated
+    # Flag claims where provider was terminated
+    # on or before the date of service
     joined["provider_terminated_at_service"] = joined.apply(
         lambda row: _check_terminated_at_service(
             row["enrollment_status"],
@@ -191,7 +185,6 @@ def _check_terminated_at_service(
     """
     Check if provider was terminated on the date of service.
 
-    This is the core enrollment-claims discrepancy check.
     If a provider was terminated before the service date
     the claim will be denied at adjudication.
     """
@@ -202,8 +195,8 @@ def _check_terminated_at_service(
         return "UNKNOWN"
 
     try:
-        term = int(termination_date.replace("-", ""))
-        svc  = int(date_of_service.replace("-", ""))
+        term = int(str(termination_date).replace("-", ""))
+        svc  = int(str(date_of_service).replace("-", ""))
 
         if svc > term:
             return "HIGH - service after termination date"
@@ -219,7 +212,6 @@ if __name__ == "__main__":
     import sys
     from pathlib import Path
 
-    # Parse the 837 claims file
     claims_path = Path("data/x12/sample_837.txt")
 
     if not claims_path.exists():
@@ -231,7 +223,6 @@ if __name__ == "__main__":
     print("=== 837 Claims ===")
     print(claims_df.to_string())
 
-    # Join to enrollment data from Session 2
     enrollment_path = Path("data/x12/sample_834.txt")
 
     if enrollment_path.exists():
@@ -248,12 +239,3 @@ if __name__ == "__main__":
             "enrollment_status", "termination_date",
             "provider_terminated_at_service"
         ]].to_string())
-        
-
-
-
-# In[ ]:
-
-
-
-
